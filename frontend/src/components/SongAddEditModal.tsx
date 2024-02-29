@@ -7,7 +7,7 @@ import { styled } from '@mui/system';
 
 import Input from './Input';
 import Modal from './Modal';
-import { GreenButton, RedButton, YellowButton } from './NavbarButton';
+import { GreenButton, RedButton } from './NavbarButton';
 import Slider from './Slider';
 import SliderBox from './SliderBox';
 import SongForm from './SongForm';
@@ -16,7 +16,6 @@ import { GlissandoTab, GlissandoTabPanel, GlissandoTabs, GlissandoTabsList } fro
 import { useAxios } from '../hooks/useAxios';
 import { useSession } from '../hooks/useSession';
 import { SongData } from '../routes/Editor';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
 
 
 const TempoFrame = styled('div')(({ theme }) => ({
@@ -171,10 +170,6 @@ function SongAddEditModal(props: SongAddEditModalProps) {
       { signatureAndTempoDisabled && <><br /><strong>Dla tego utworu zablokowano zmianę metrum i tempa!</strong></> }
     </>
   );
-
-  function downloadAllTracks(): any {
-    throw new Error('Function not implemented.');
-  }
 
   return (
     <Modal open={props.open} title={isEdit ? 'Właściwości utworu' : 'Stwórz utwór'} buttons={() =>
