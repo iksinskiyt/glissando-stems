@@ -123,9 +123,8 @@ function KeyboardHandler() {
 
     const handler = (ev: KeyboardEvent) => {
       if (ev.target !== document.body) {
-        return;
-      }
-
+        ev.preventDefault();
+    }
       switch (ev.key) {
         case ' ': handleSpacePress(); break;
       }
