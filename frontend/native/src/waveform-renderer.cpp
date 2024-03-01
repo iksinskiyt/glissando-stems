@@ -1,17 +1,17 @@
 #include <waveform-renderer.h>
 
 #include <lodepng.h>
-
+#include <algorithm>
 #include <iostream>
 
 #define SAMPLE_MAX 32767
 #define SAMPLE_MIN -32768
 
 
-WaveformRenderer::WaveformRenderer()
-    : WaveformRenderer(4096, 128) {}
+WaveformRenderer::WaveformRenderer(SilenceDetector& detector)
+    : WaveformRenderer(4096, 128,detector) {}
 
-WaveformRenderer::WaveformRenderer(int width, int height)
+WaveformRenderer::WaveformRenderer(int width, int height,SilenceDetector& detector)
     : _output_width(width)
     , _output_height(height)
     , _color_red(255)
@@ -19,8 +19,9 @@ WaveformRenderer::WaveformRenderer(int width, int height)
     , _color_blue(255)
     , _color_alpha(255)
     , _silence_alpha(128)
-    , _silence_threshold(1536)
+    , _silence_threshold(400)
     , _silence_min_length(100000)
+    , _silence_detector(detector)
 {
 }
 
@@ -125,52 +126,34 @@ void WaveformRenderer::process_waveform(pixel* image, int32_t offset,
 }
 
 void WaveformRenderer::process_silence(pixel* image, int32_t offset, 
-    uint32_t total_length, const int16_t* samples, uint32_t num_samples)
+    int32_t total_length, const int16_t* samples, int32_t num_samples)
 {
-    uint32_t silence_start = 0;
     int current_column = 0;
-
-    for (uint32_t sample = 0; sample < total_length; ++sample) {
-        int32_t stem_sample = sample - offset;
-        bool is_silence = false;
-
-        if (stem_sample < 0 || stem_sample >= static_cast<int32_t>(num_samples)) {
-            is_silence = true;
-        } else {
-            int16_t left = samples[2 * stem_sample];
-            int16_t right = samples[2 * stem_sample + 1];
-
-            is_silence = std::abs(left) < _silence_threshold 
-                       && std::abs(right) < _silence_threshold;
-        }
-
-        if (!is_silence) {
-            uint32_t silence_length = sample - silence_start;
-            if (silence_length >= _silence_min_length) {
-                draw_silence(image, total_length, 
-                    current_column, silence_start, sample);
-            }
-
-            silence_start = sample + 1;
-        }
+    if(offset>=0){
+        draw_silence(image,total_length,current_column,0,offset);
     }
-
-    uint32_t silence_length = total_length - silence_start;
-    if (silence_length >= _silence_min_length) {
-        draw_silence(image, total_length, 
-            current_column, silence_start, total_length);
+    for (auto&& [start,end] : _silence_detector) {
+        if(end + offset >= 0){
+            draw_silence(image, total_length, 
+                current_column, std::max(start+offset,0), end+offset);
+        }
+    }   
+    if(total_length> num_samples+offset){
+        draw_silence(image,total_length,current_column,std::max(num_samples+offset,0),total_length);
     }
 }
 
 void WaveformRenderer::draw_silence(pixel* image, uint32_t total_length, int& column, 
     uint32_t silence_start, uint32_t silence_end)
 {
-    uint32_t column_start = column == 0 ? 0 : get_column_end_sample(column - 1, total_length);
+    uint32_t column_start = column <= 0 ? 0 : get_column_end_sample(column - 1, total_length);
     uint32_t column_end = get_column_end_sample(column, total_length);
 
     pixel over = { 0, 0, 0, _silence_alpha };
 
     while (column_end < silence_end) {
+        if(column >= _output_width)
+            break;
         if (silence_start <= column_start) {
             for (int y = 0; y < _output_height; ++y) {
                 blend_pixel(image[y * _output_width + column], over);

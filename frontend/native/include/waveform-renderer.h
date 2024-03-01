@@ -2,11 +2,12 @@
 #include <cstdint>
 #include <utility>
 #include <vector>
+#include "silence-detector.h"
 
 class WaveformRenderer {
 public:
-    WaveformRenderer();
-    WaveformRenderer(int width, int height);
+    WaveformRenderer(SilenceDetector& detector);
+    WaveformRenderer(int width, int height,SilenceDetector& detector);
 
     void set_silence_alpha(uint8_t alpha);
     uint8_t silence_alpha() const;
@@ -36,11 +37,12 @@ private:
     uint8_t _silence_alpha;
     int16_t _silence_threshold;
     uint32_t _silence_min_length;
+    SilenceDetector& _silence_detector;
 
     void process_waveform(pixel* image, int32_t offset, uint32_t total_length,
         const int16_t* samples, uint32_t num_samples);
-    void process_silence(pixel* image, int32_t offset, uint32_t total_length,
-        const int16_t* samples, uint32_t num_samples);
+    void process_silence(pixel* image, int32_t offset, int32_t total_length,
+        const int16_t* samples, int32_t num_samples);
     void draw_silence(pixel* image, uint32_t total_length, int& column, 
         uint32_t silence_start, uint32_t silence_end);
     void blend_pixel(pixel& src, const pixel& over);

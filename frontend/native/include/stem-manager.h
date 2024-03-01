@@ -6,7 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-
+#include <silence-detector.h>
 #include <vector>
 
 
@@ -60,7 +60,7 @@ private:
         std::atomic_bool data_ready;
         std::atomic_bool deleted;
         std::atomic_bool error;
-
+        float gain;
         // do not use this string, it only owns 
         // a binary data block, use `.data` instead
         std::string data_block; 
@@ -68,6 +68,7 @@ private:
         const int16_t* data;
         std::atomic<uint32_t> waveform_ordinal;
         std::string waveform_base64;
+        SilenceDetector detector;
     };
 
     using StemEntryPtr = std::shared_ptr<StemEntry>;

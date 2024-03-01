@@ -146,16 +146,26 @@ void StemManager::render(uint32_t first_sample, audio_chunk& chunk)
         }
 
         std::lock_guard lock(stem_ptr->mutex);
+
         int stem_sample = first_sample - stem_ptr->info.offset;
+        bool is_silent = false;
+        for(auto&& [start,end] : stem_ptr->detector){
+            if((stem_sample >= start) && stem_sample <= end - AUDIO_CHUNK_SAMPLES){
+                is_silent = true;
+                break;
+            } 
+        }
+        if(is_silent){
+            continue;
+        }
         int stem_length = stem_ptr->info.samples;
-        float gain = Utils::decibels_to_gain(stem_ptr->info.gain_db);
         float pan = stem_ptr->info.pan;
         if (pan < -1.f) pan = -1.f;
         if (pan > 1.f) pan = 1.f;
 
         // Linear pan law
-        float gain_l = 1 - pan;
-        float gain_r = 1 + pan;
+        float gain_l = (1 - pan) * stem_ptr->gain * SHORT_TO_FLOAT;
+        float gain_r = (1 + pan) * stem_ptr->gain * SHORT_TO_FLOAT;
 
         for (int i = 0; i < AUDIO_CHUNK_SAMPLES; ++i, ++stem_sample) {
             if (stem_sample < 0 || stem_sample >= stem_length) {
@@ -163,9 +173,9 @@ void StemManager::render(uint32_t first_sample, audio_chunk& chunk)
             }
 
             chunk.left_channel[i] 
-                += stem_ptr->data[2 * stem_sample] * SHORT_TO_FLOAT * gain * gain_l;
+                += stem_ptr->data[2 * stem_sample] * gain_l;
             chunk.right_channel[i] 
-                += stem_ptr->data[2 * stem_sample + 1] * SHORT_TO_FLOAT * gain * gain_r;
+                += stem_ptr->data[2 * stem_sample + 1] * gain_r;
         }
     }
 }
@@ -234,6 +244,7 @@ void StemManager::update_or_add_stems(const std::vector<stem_info>& info)
 
             std::lock_guard lock(stem_ptr->mutex);
             stem_ptr->info.gain_db = stem_info.gain_db;
+            stem_ptr->gain = Utils::decibels_to_gain(stem_info.gain_db);
             stem_ptr->info.pan = stem_info.pan;
         }
 
@@ -271,6 +282,7 @@ auto StemManager::create_stem_from_info(const stem_info& info) -> StemEntryPtr
     new_stem->error = false;
     new_stem->waveform_ordinal = 0;
     new_stem->waveform_base64 = "";
+    new_stem->gain = Utils::decibels_to_gain(info.gain_db);
 
     run_stem_processing(new_stem);
 
@@ -360,7 +372,7 @@ void StemManager::process_stem(StemEntryPtr stem)
 
     if (vorbis_ok) {
         printf("Stem %u: Vorbis data has been decoded.\n", sid);
-
+        stem->detector.detect_silence(stem->data,stem->info.samples);
         stem->data_ready = true;
         process_stem_waveform(stem, 0);
 
@@ -408,7 +420,7 @@ void StemManager::process_stem_waveform(StemEntryPtr stem, uint32_t prev_ordinal
         return;
     }
 
-    WaveformRenderer renderer;
+    WaveformRenderer renderer(stem->detector);
     renderer.set_silence_alpha(140);
 
     int32_t stem_offset;
