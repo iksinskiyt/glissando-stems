@@ -51,7 +51,7 @@ jobs:
 
       - name: Place commit hash into .env
         shell: bash
-        run: echo VITE_COMMIT_HASH=${{ github.sha }} | cut -c 1-8 > .env
+        run: echo VITE_COMMIT_HASH=${{ github.sha }} | cut -c 1-25 > .env
         
       - name: Build project
         run: npm run build
