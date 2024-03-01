@@ -22,6 +22,7 @@ import SongAddEditModal from '../components/SongAddEditModal';
 
 import { useAxios } from '../hooks/useAxios';
 import { useSession } from "../hooks/useSession";
+import Foot from '../components/Foot';
 
 function reversed<T>(array: T[]): T[] {
   return array.slice().reverse();
@@ -276,6 +277,7 @@ function SongListRoute() {
         songId={deleteModalSongId!} 
         songTitle={deleteModalSongTitle} 
         onCancel={handleDeleteModalClose} />
+        <Foot />
     </SolidBackgroundFrame>
   );
 }

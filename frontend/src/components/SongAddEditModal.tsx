@@ -16,7 +16,7 @@ import { GlissandoTab, GlissandoTabPanel, GlissandoTabs, GlissandoTabsList } fro
 import { useAxios } from '../hooks/useAxios';
 import { useSession } from '../hooks/useSession';
 import { SongData } from '../routes/Editor';
-
+import DownloadButton from './DownloadButton';
 
 const TempoFrame = styled('div')(({ theme }) => ({
   display: 'flex',
@@ -55,9 +55,11 @@ function SongAddEditModal(props: SongAddEditModalProps) {
   const session = useSession();
   const queryClient = useQueryClient();
 
+
   const isEdit = !!props.songData;
   const signatureAndTempoDisabled = props.songData?.bpm === null && props.songData.timeSignature === null;
-  
+
+
   const handleTempoKeyDown = (charIdx: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     const nextInputId = `bpm${charIdx}`;
     const digits = '0123456789';
@@ -174,6 +176,7 @@ function SongAddEditModal(props: SongAddEditModalProps) {
   return (
     <Modal open={props.open} title={isEdit ? 'Właściwości utworu' : 'Stwórz utwór'} buttons={() =>
       <>
+        {props.songData && <DownloadButton songData={props.songData}/>}&nbsp;&nbsp;
         <RedButton onClick={props.onCancel}><CloseRoundedIcon />&nbsp;Anuluj</RedButton>&nbsp;&nbsp;
         <GreenButton onClick={isEdit ? handleAcceptEdit : handleAcceptNew} disabled={!valid}>
           <CheckRoundedIcon />{ processing ? '\u2022 \u2022 \u2022' : <>&nbsp;Zaakceptuj</> }

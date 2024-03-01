@@ -8,6 +8,7 @@ import Input from '../components/Input';
 
 import { useAxios } from '../hooks/useAxios';
 import { useSession } from '../hooks/useSession';
+import Foot from '../components/Foot';
 
 const Frame = styled('div')(({ theme }) => `
   margin: auto;
@@ -131,6 +132,7 @@ function LoginRoute() {
       <Button type='button' style={{width: '100%'}} onClick={handleLogin} disabled={!loginEnabled}>
         { loginPending ? '\u2022 \u2022 \u2022' : 'Zaloguj się' }
       </Button>
+      <Foot />
     </Frame>
   );
 }

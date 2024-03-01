@@ -122,9 +122,14 @@ function KeyboardHandler() {
     };
 
     const handler = (ev: KeyboardEvent) => {
-      if (ev.target !== document.body) {
+      if(document.getElementsByClassName("MuiModal-root").length !== 0){
+        return;
+      }
+
+      if (ev.target !== document.body && ev.key === ' ') {
         ev.preventDefault();
-    }
+      }
+
       switch (ev.key) {
         case ' ': handleSpacePress(); break;
       }
